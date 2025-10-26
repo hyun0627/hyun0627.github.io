@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>인디언 포커</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; }
+    body {
+      width: 100vw;
+      height: 100vh;
+      min-height:100vh;
+      background: #1b8834;
+      user-select:none;
+      font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .table {
+      box-shadow: 0 0 32px #073413a7;
+      background: #18703a;
+      border-radius: 51px;
+      width: 800px; min-width: 340px; min-height: 570px; /* 줄임 */
+      padding: 0 10px; position: relative;
+      border: 16px solid #5d3e11;
+      display: flex; flex-direction: column; align-items:center; justify-content: center;
+    }
+    .chipstack { position: absolute; top: 18px; left: 37px; z-index: 300; display: flex; flex-direction: column; align-items: flex-start; }
+    .chips { display: flex; align-items: center; font-size:23px; background:none; border:none; box-shadow:none; margin-bottom:10px; font-weight:bold; }
+    .chipicon.mychip {
+      width:29px; height:29px; display:inline-block; border-radius:50%; background:radial-gradient(circle,#fa4b67 60%,#9d1828 98%); border:2.5px solid #ffcbcb;box-shadow: 0 3px 12px #d8113142, 0 1px #ffd9d9;
+      margin-right:9px; margin-left:2px;
+    }
+    .chipicon.opchip {
+      width:29px; height:29px; display:inline-block; border-radius:50%; background:radial-gradient(circle,#343434 69%,#111 99%); border:2.5px solid #ececec; box-shadow: 0 4px 11px #2224, 0 2px #fff4;
+      margin-right:9px; margin-left:2px;
+    }
+    .namearea {
+      text-align:center;font-size:32px;font-weight:bold;margin:7px 0 16px 0;letter-spacing:2px;color:#fff;text-shadow:1px 1px 3px #000b;
+    }
+    .deckarea {
+      margin: 0 auto 7px auto; /* 줄임 */
+      min-height: 90px;
+      min-width: 140px;
+      display:flex;justify-content:center;align-items:center;
+      transition: margin 0.18s;
+    }
+    .deck-card {
+      width:80px; height:120px; border-radius:13px; background:#222c; position:relative;
+      display:flex; align-items:center; justify-content:center; font-size:2.2em; box-shadow:0 6px 16px #222a;
+      border:4px solid #fff; z-index:111;
+      transition: transform 0.5s cubic-bezier(.22,1.03,.48,.87);
+    }
+    .cardrow {
+      gap:20px; display:flex; justify-content:center; min-height:170px;
+    }
+    .cardarea {
+      min-width:168px;
+      margin-bottom: 7px;
+      margin-top: 7px;
+    }
+    #p2area { margin-top: 9px !important; }
+    #p1area { margin-bottom: 9px !important; }
+    .cardstack {display:flex;gap:19px;justify-content:center;}
+    .card {
+      width:92px;height:144px;border-radius:17px;background:#fff;border:3.5px solid #222;box-shadow:0 8px 20px #0005,inset 0 2px #fafafa3b;display:flex;align-items:center;justify-content:center;font-size:2.5em;font-weight:bold;color:#192d40;position:relative;transition:.22s;
+    }
+    .card.back {
+      background: repeating-linear-gradient(135deg,#0041b9 0 8px,#fff 8px 12px,#ffba06 12px 18px,#0031a0 18px 30px);
+      position:relative; overflow:hidden;
+      border:3.5px solid #db0707;
+      border-style: double;
+      box-shadow:0 0 0 3px #fff, 0 4px 22px #1118;
+    }
+    .card.back::before {
+      content: "";
+      position: absolute;
+      left:50%; top: 50%;
+      width: 36px; height:36px;
+      background: radial-gradient(circle,#ffe889 60%,#ede86a 87%,#ba7d02 100%);
+      border-radius:41%;
+      border:2px solid #c77b0c;
+      box-shadow:0 0 9px #ffdc87e6;
+      transform:translate(-50%,-50%);
+      z-index:2;
+      opacity:.83;
+    }
+    .card.face {background:linear-gradient(120deg,#fff,#e6f3ea 60% 100%);}
+    .card.chosen {border:4.5px solid #c9203a!important;box-shadow: 0 0 0 7px #ff386062;z-index:4;}
+    .cardreveal {font-size:21px;margin:13px;color:#ffda68;text-shadow:0 2px 8px #000b}
+    .betrow {display:flex;justify-content:center;gap:42px;margin:35px 0 18px 0;}
+    .btn {font-size:1.18em;font-weight:bold;min-width:99px;padding:12px 18px;margin:0 8px; border-radius:13px;border:none;cursor:pointer;transition:.22s;background:#f8f5e2;box-shadow:0 4px 13px #0d2a13a6;}
+    .btn.bet {background:linear-gradient(115deg,#ffde8a,#ee5560 80%);color:#783014; border:2.5px solid #f8db8e;}
+    .btn.die {background:linear-gradient(115deg,#c0e1f9,#1584b2 80%); color:#26325c;border:2.5px solid #b6cadb;}
+    .btn.again {background:linear-gradient(91deg,#ffe9c7,#ffb677); color:#b46d17; border:2.5px solid #f1c784;}
+    .gameinfo { width:100%;margin: 21px auto 13px auto; text-align:center;font-size:27px;color:#fffef7; text-shadow:0 1px 15px #000c,0 2px 8px #111a; }
+    .bet-history {text-align:center;color:#cdeffd;font-size:17px;margin:7px 0 1px 0;min-height:32px;}
+  </style>
+</head>
+<body>
+<div class='table' id='table' style='position:relative;'>
+  <div class='chipstack'>
+    <div class='chips' id='p1chips'><span class='chipicon mychip'></span>내 칩: <span id='p1_chip_val'>10</span></div>
+    <div class='chips' id='p2chips'><span class='chipicon opchip'></span>상대 칩: <span id='p2_chip_val'>10</span></div>
+  </div>
+  <div style='display:flex;flex-direction:column;align-items:center;width:100%;'>
+    <div class='cardarea' id='p2area' style='margin-top:30px;'>
+      <div class='namearea'>상대</div>
+      <div class='cardstack' id='p2cards'></div>
+      <div class='cardreveal' id='p2reveal'></div>
+    </div>
+    <div class='deckarea' id='centerdeck'>
+      <div class='deck-card' id='deckcard1'>🂠</div>
+      <div class='deck-card' id='deckcard2' style='margin-left:-46px;'>🂠</div>
+    </div>
+    <div class='cardarea' id='p1area' style='margin-bottom:30px;'>
+      <div class='namearea'>나</div>
+      <div class='cardstack' id='p1cards'></div>
+      <div class='cardreveal' id='p1reveal'></div>
+    </div>
+  </div>
+  <div class='gameinfo' id='gameinfo'>게임을 시작합니다!</div>
+  <div class='bet-history' id='bethistory'></div>
+  <div class='betrow' id='actionrow' style='display:none;'>
+    <button class='btn' id='openbtn' style='display:none;'>카드 공개</button>
+    <button class='btn bet' id='betbtn'>베팅</button>
+    <button class='btn die' id='diebtn'>다이</button>
+  </div>
+  <div style='width: 98%;display:flex;justify-content:center;'><button class='btn again' id='againbtn' style='display:none;margin-top:17px;'>다음 게임</button></div>
+</div>
+<script>
+// 카드/칩/게임 상태 데이터
+const SUITS = ['♠','♥','♣','◆'];
+const CARDNUMS = [2,3,4,5,6,7,8,9,10]; // A/K/Q/J 제외
+let p1Chips = 10, p2Chips = 10;
+let deck, p1Hand, p2Hand, p1Visible, p2Visible;
+let betPhase = 0, maxPhase = 3, betHistory = [], gameover = false;
+let p1Chosen = false, p2Chosen = false;
+
+function buildDoubleDeck() {
+  let cards = [];
+  for (let x = 0; x < 2; x++) {
+    for (let s of SUITS) for (let n of CARDNUMS) cards.push({s, n});
+  }
+  for (let i = cards.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  return cards;
+}
+
+// 카드 딜(배분) 애니메이션
+function dealCardsAnim(cb) {
+  const deck1 = document.getElementById('deckcard1');
+  const deck2 = document.getElementById('deckcard2');
+  deck1.style.visibility='visible';
+  deck2.style.visibility='visible';
+  // 초기 카드 숨김
+  document.getElementById('p1cards').style.opacity=0.3;
+  document.getElementById('p2cards').style.opacity=0.3;
+  setTimeout(()=>{
+    deck1.style.transform='translate(0px,260px) scale(1.08)'; // 나에게 이동하는 느낌
+    deck2.style.transform='translate(0px,-260px) scale(1.06)'; // 상대에게 이동하는 느낌
+    setTimeout(()=>{
+      deck1.style.visibility='hidden';deck2.style.visibility='hidden';
+      document.getElementById('p1cards').style.opacity=1;
+      document.getElementById('p2cards').style.opacity=1;
+      deck1.style.transform='';deck2.style.transform='';
+      if(cb) cb();
+    }, 700);
+  }, 350);
+}
+
+function initGame() {
+  if (!window._mainDeck) window._mainDeck = buildDoubleDeck();
+  deck = window._mainDeck;
+
+  if (deck.length < 4) {
+    // 덱 소진 시 최종 칩 승부
+    endGameByChips();
+    return;
+  }
+  p1Hand = [deck.pop(), deck.pop()];
+  p2Hand = [deck.pop(), deck.pop()];
+  p1Visible = null;
+  p2Visible = null;
+  betPhase = 0;
+  gameover = false;
+  betHistory = [];
+  p1Chosen = false;
+  p2Chosen = false;
+  renderHands();
+  renderChips();
+  document.getElementById('gameinfo').textContent = '각자 한 장 공개할 카드를 선택하세요!';
+  document.getElementById('actionrow').style.display = 'none';
+  document.getElementById('againbtn').style.display = 'none';
+  document.getElementById('bethistory').innerHTML = '';
+  document.getElementById('p1reveal').textContent = '';
+  document.getElementById('p2reveal').textContent = '';
+  // 덱카드 애니메이션
+  document.getElementById('deckcard1').style.visibility = 'visible';
+  document.getElementById('deckcard2').style.visibility = 'visible';
+  document.getElementById('deckcard1').style.transform = '';
+  document.getElementById('deckcard2').style.transform = '';
+  setTimeout(() => {
+    dealCardsAnim(() => {});
+  }, 150);
+}
+
+function endGameByChips() {
+  let msg;
+  if (p1Chips > p2Chips) msg = '모든 카드 소진! 내 칩이 더 많으므로 <b>최종 승리!</b>';
+  else if (p1Chips < p2Chips) msg = '모든 카드 소진! 상대 칩이 더 많아 <b>패배!</b>';
+  else msg = '모든 카드 소진! 칩이 같으므로 <b>무승부</b>!';
+  document.getElementById('gameinfo').innerHTML = msg;
+  document.getElementById('actionrow').style.display = 'none';
+  document.getElementById('againbtn').style.display = 'none';
+  // 다시 시작 위해 deck 및 칩 초기화 옵션 안내
+  setTimeout(() => {
+    document.getElementById('bethistory').innerHTML = '새 게임을 시작하려면 새로고침하거나 칩/카드 상태를 리셋하세요!';
+  }, 100);
+}
+
+// 카드 렌더 함수
+function renderHand(area, hand, reveal, canChoose, chosenIdx, showAll) {
+  area.innerHTML = '';
+  hand.forEach((card,i)=>{
+    let div = document.createElement('div');
+    // showAll이면 항상 공개
+    const shown = showAll || reveal[i];
+    div.className = 'card ' + (shown ? 'face' : 'back') + (canChoose?'':' disabled') + (chosenIdx===i?' chosen':'');
+    div.innerHTML = shown ? (card.n+"<span style='font-size:.66em;'>"+card.s+"</span>") : '';
+    if(showAll && chosenIdx===i) {
+      // 내 쪽에서 공개카드는 강조
+      div.className += ' chosen';
+    }
+    if(showAll && canChoose && chosenIdx!==i) {
+      div.title = '내가 상대에게 보여주지 않은 카드 (나만 볼 수 있음)';
+    }
+    if (canChoose) {
+      div.style.cursor='pointer';
+      div.onclick = ()=>chooseHandCard(i,area.id==='p1cards');
+    }
+    area.appendChild(div);
+  });
+}
+
+function renderHands() {
+  // 상대의 카드 (기존대로)
+  let p2RevealArr = [false,false];
+  if (p2Visible!==null) p2RevealArr[p2Visible]=true;
+  renderHand(document.getElementById('p2cards'), p2Hand, p2RevealArr, false, p2Visible, false);
+  // 내 카드: 항상 두 장 다 표시, 공개카드는 테두리로, 비공개 카드는 초록테두리/강조 없이
+  let canChoose = !p1Chosen && !gameover && p1Visible===null;
+  renderHand(document.getElementById('p1cards'), p1Hand, [true,true], canChoose, p1Visible, true);
+}
+
+function chooseHandCard(idx, isMe) {
+  if (isMe && !p1Chosen && p1Visible===null) {
+    p1Visible = idx; p1Chosen=true; renderHands();
+    document.getElementById('p1reveal').textContent = '상대에게 이 카드를 보여줍니다!';
+    setTimeout(()=>{
+      checkBothReveal();
+    },1200);
+  }
+}
+
+function checkBothReveal() {
+  if(p1Visible!==null && p2Visible===null){
+    // NPC 선택: 전략, 더 높은 카드(show)가 보이게!
+    p2Visible = p2Hand[0].n >= p2Hand[1].n ? 0 : 1;
+    p2Chosen = true; renderHands();
+    document.getElementById('p2reveal').textContent = '내가 보여준 카드!';
+  }
+  if(p1Visible!==null && p2Visible!==null){
+    document.getElementById('gameinfo').textContent = '베팅/다이 선택 (3라운드)';
+    betPhase=1;
+    document.getElementById('actionrow').style.display='flex';
+    showBetButtons();
+    renderHands();
+  }
+}
+
+function renderChips() {
+  document.getElementById('p1_chip_val').textContent = p1Chips;
+  document.getElementById('p2_chip_val').textContent = p2Chips;
+}
+
+function showBetButtons() {
+  document.getElementById('betbtn').style.display = !gameover ? '' : 'none';
+  document.getElementById('diebtn').style.display = !gameover ? '' : 'none';
+  document.getElementById('openbtn').style.display = 'none';
+}
+
+function logBet(player, action) {
+  betHistory.push(`<span style='color:${player?"#fd6767":"#5ec8ef"};font-weight:bold'>${player?"나":"상대"}</span>: ${action}`);
+  document.getElementById('bethistory').innerHTML = betHistory.join(' | ');
+}
+
+function playerAction(bet) {
+  if(gameover) return;
+  if(bet){
+    logBet(true, '베팅');
+    nextNpcAction();
+  } else {
+    logBet(true, '다이');
+    finishGame(false);
+  }
+}
+
+function nextNpcAction() {
+  setTimeout(()=>{
+    // NPC 베팅/다이 로직: Show카드+남은 베팅수+확률 기반
+    let shown = p1Hand[p1Visible].n;
+    let mySum = p2Hand[0].n + p2Hand[1].n;
+    let oppSum = '?'; // 상대는 모르니까
+    let confidence = (p2Hand[p2Visible].n + shown) / 2;
+    let probRaise = Math.min(1, (confidence-2.5)/7 + (betPhase-1)*0.13);
+    let bet = Math.random()<probRaise;
+    logBet(false, bet?'베팅':'다이');
+    if(!bet) finishGame(true);
+    else nextBetPhase();
+  },800);
+}
+
+function nextBetPhase() {
+  betPhase++;
+  if(betPhase>maxPhase){
+    // 공개+승부
+    finishGame();
+  }
+}
+
+function finishGame(npcFolded) {
+  document.getElementById('actionrow').style.display='none';
+  gameover=true;
+  document.getElementById('againbtn').style.display='inline-block';
+  let mySum = p1Hand[0].n + p1Hand[1].n;
+  let opSum = p2Hand[0].n + p2Hand[1].n;
+  let outcome = '';
+  if(npcFolded===true) {outcome = '상대가 다이! 내가 승리!'; p1Chips++; p2Chips--;}
+  else if(npcFolded===false) {outcome = '내가 다이! 상대 승리!'; p1Chips--; p2Chips++;}
+  else if(mySum>opSum){ outcome='최종 오픈! 내가 승리!'; p1Chips+=2; p2Chips-=2;}
+  else if(mySum<opSum){ outcome='최종 오픈! 상대 승리!'; p1Chips-=2; p2Chips+=2;}
+  else outcome='무승부!';
+
+  document.getElementById('gameinfo').innerHTML = `${outcome}<br>(내 합: <b>${mySum}</b> / 상대 합: <b>${opSum}</b>)`;
+  renderChips();
+  revealAllHands();
+}
+
+function revealAllHands() {
+  // 다 공개 (face)
+  renderHand(document.getElementById('p1cards'), p1Hand, [true,true], false);
+  renderHand(document.getElementById('p2cards'), p2Hand, [true,true], false);
+  document.getElementById('p1reveal').textContent = '';
+  document.getElementById('p2reveal').textContent = '';
+}
+
+// 버튼 및 이벤트 연결
+function registerEvents() {
+  document.getElementById('betbtn').onclick = () => playerAction(true);
+  document.getElementById('diebtn').onclick = () => playerAction(false);
+  document.getElementById('openbtn').onclick = () => finishGame();
+  document.getElementById('againbtn').onclick = () => {
+    initGame();
+  };
+}
+
+registerEvents();
+initGame();
+</script>
+</body>
+</html>
