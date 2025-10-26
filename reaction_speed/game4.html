@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ 반응속도 테스트</title>
+  <style>
+    :root {
+      --bg-gradient-start: #FF6B6B;
+      --bg-gradient-mid: #4ECDC4;
+      --bg-gradient-end: #556270;
+      --red-waiting: #EF4444;
+      --green-ready: #22C55E;
+      --orange-early: #FB923C;
+      --gold-accent: #F59E0B;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0C0;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --card-border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-mid) 50%, var(--bg-gradient-end) 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      position: relative;
+    }
+
+    /* 시작 화면 */
+    .start-screen {
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .title {
+      font-size: 3rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+      filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.3));
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+    }
+
+    .difficulty-section {
+      margin-bottom: 40px;
+    }
+
+    .difficulty-title {
+      color: var(--text-primary);
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .difficulty-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .difficulty-btn {
+      padding: 30px 20px;
+      border-radius: 15px;
+      border: 2px solid;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .difficulty-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .difficulty-btn.easy {
+      border-color: rgba(34, 197, 94, 0.5);
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    .difficulty-btn.easy:hover {
+      border-color: rgba(34, 197, 94, 0.8);
+      background: rgba(34, 197, 94, 0.2);
+    }
+
+    .difficulty-btn.normal {
+      border-color: rgba(102, 126, 234, 0.5);
+      background: rgba(102, 126, 234, 0.1);
+    }
+
+    .difficulty-btn.normal:hover {
+      border-color: rgba(102, 126, 234, 0.8);
+      background: rgba(102, 126, 234, 0.2);
+    }
+
+    .difficulty-btn.hard {
+      border-color: rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .difficulty-btn.hard:hover {
+      border-color: rgba(239, 68, 68, 0.8);
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .difficulty-btn-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .difficulty-btn-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* 통계 카드 */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 15px;
+      padding: 25px;
+      text-align: center;
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(102, 126, 234, 0.5);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    .stat-value.highlight {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* 게임 화면 */
+    .game-screen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      cursor: pointer;
+      transition: background-color 0.3s ease-in-out;
+      z-index: 1000;
+    }
+
+    .game-screen.active {
+      display: flex;
+    }
+
+    .game-screen.waiting {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
+    }
+
+    .game-screen.ready {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.95) 0%, rgba(22, 163, 74, 0.95) 100%);
+      animation: readyGlow 0.5s ease-in-out;
+    }
+
+    @keyframes readyGlow {
+      0% { box-shadow: inset 0 0 0 rgba(34, 197, 94, 0); }
+      100% { box-shadow: inset 0 0 100px rgba(34, 197, 94, 0.3); }
+    }
+
+    .game-screen.too-early {
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.95) 0%, rgba(249, 115, 22, 0.95) 100%);
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .game-message {
+      font-size: 4rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      animation: messageAppear 0.3s ease-in-out;
+    }
+
+    @keyframes messageAppear {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .game-instruction {
+      font-size: 1.5rem;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .game-progress {
+      position: absolute;
+      top: 40px;
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 결과 화면 */
+    .result-screen {
+      display: none;
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .result-screen.active {
+      display: block;
+    }
+
+    .result-time {
+      font-size: 5rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 20px 0;
+      animation: resultPop 0.5s ease-in-out;
+    }
+
+    @keyframes resultPop {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .result-feedback {
+      font-size: 1.8rem;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    .result-progress {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 30px;
+    }
+
+    .result-session-info {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .session-info-item {
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .session-info-item span {
+      color: var(--text-primary);
+      font-weight: bold;
+    }
+
+    .action-button {
+      padding: 18px 50px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      margin: 10px;
+    }
+
+    .action-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+    }
+
+    .action-button:active {
+      transform: translateY(-1px);
+    }
+
+    .action-button.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: none;
+    }
+
+    .action-button.secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* 최종 결과 화면 */
+    .final-result {
+      margin-top: 40px;
+    }
+
+    .final-best-record {
+      background: rgba(102, 126, 234, 0.2);
+      border: 2px solid rgba(102, 126, 234, 0.5);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+
+    .final-best-label {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .final-best-time {
+      font-size: 3.5rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .session-records {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .session-record-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      border-radius: 15px;
+      padding: 20px 10px;
+      text-align: center;
+    }
+
+    .session-record-card.best {
+      background: rgba(102, 126, 234, 0.2);
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    .session-record-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .session-record-time {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text-primary);
+    }
+
+    .session-record-card.best .session-record-time {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* 최근 기록 */
+    .history-container {
+      margin-top: 30px;
+      background: var(--card-bg);
+      border-radius: 15px;
+      padding: 25px;
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(10px);
+    }
+
+    .history-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .reset-btn {
+      padding: 8px 20px;
+      font-size: 0.9rem;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .reset-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .history-item {
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      border: 1px solid var(--card-border);
+      transition: all 0.3s ease;
+    }
+
+    .history-item:hover {
+      transform: scale(1.05);
+      border-color: rgba(102, 126, 234, 0.5);
+    }
+
+    .history-item.best {
+      background: rgba(102, 126, 234, 0.3);
+      border-color: rgba(102, 126, 234, 0.5);
+      font-weight: bold;
+    }
+
+    .empty-history {
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* 반응형 디자인 */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 2rem;
+      }
+
+      .game-message {
+        font-size: 2.5rem;
+      }
+
+      .game-instruction {
+        font-size: 1.2rem;
+      }
+
+      .result-time {
+        font-size: 3.5rem;
+      }
+
+      .result-feedback {
+        font-size: 1.4rem;
+      }
+
+      .action-button {
+        padding: 15px 40px;
+        font-size: 1.2rem;
+      }
+
+      .stats-container {
+        grid-template-columns: 1fr;
+      }
+
+      .difficulty-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 시작 화면 -->
+    <div class="start-screen" id="startScreen">
+      <h1 class="title">⚡ 반응속도 테스트</h1>
+      <p class="subtitle">녹색으로 바뀌면 최대한 빠르게 클릭하세요!</p>
+
+      <div class="difficulty-section">
+        <h2 class="difficulty-title">난이도 선택</h2>
+        <div class="difficulty-buttons">
+          <div class="difficulty-btn easy" onclick="startGame('easy')">
+            <div class="difficulty-btn-title">쉬움</div>
+            <div class="difficulty-btn-desc">대기: 2-4초</div>
+          </div>
+          <div class="difficulty-btn normal" onclick="startGame('normal')">
+            <div class="difficulty-btn-title">보통</div>
+            <div class="difficulty-btn-desc">대기: 1-3초</div>
+          </div>
+          <div class="difficulty-btn hard" onclick="startGame('hard')">
+            <div class="difficulty-btn-title">어려움</div>
+            <div class="difficulty-btn-desc">대기: 0.5-2초</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-label">최고 기록</div>
+          <div class="stat-value highlight" id="bestTime">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">평균 반응속도</div>
+          <div class="stat-value" id="avgTime">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">시도 횟수</div>
+          <div class="stat-value" id="attempts">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">성공률</div>
+          <div class="stat-value" id="successRate">0%</div>
+        </div>
+      </div>
+
+      <div class="history-container">
+        <div class="history-title">
+          <span>📊 최근 기록</span>
+          <button class="reset-btn" onclick="resetStats()">초기화</button>
+        </div>
+        <div class="history-list" id="historyList">
+          <div class="empty-history">아직 기록이 없습니다</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 게임 화면 -->
+    <div class="game-screen" id="gameScreen" onclick="handleGameClick()">
+      <div class="game-progress" id="gameProgress">시도 1/3</div>
+      <div class="game-message" id="gameMessage">준비...</div>
+      <div class="game-instruction" id="gameInstruction">녹색으로 바뀔 때까지 기다리세요</div>
+    </div>
+
+    <!-- 결과 화면 -->
+    <div class="result-screen" id="resultScreen">
+      <h1 class="title">⚡ 반응속도 테스트</h1>
+      
+      <div class="result-time" id="resultTime">285ms</div>
+      <div class="result-feedback" id="resultFeedback">매우 빠릅니다! ⚡</div>
+      <div class="result-progress" id="resultProgress">시도 1/3 완료</div>
+      
+      <div class="result-session-info">
+        <div class="session-info-item">
+          현재 세션 최고: <span id="sessionBest">-</span>
+        </div>
+        <div class="session-info-item">
+          전체 최고: <span id="allTimeBest">-</span>
+        </div>
+      </div>
+
+      <div id="actionButtons">
+        <button class="action-button" onclick="nextAttempt()">다음 시도</button>
+      </div>
+
+      <!-- 최종 결과 (3회 완료 시) -->
+      <div class="final-result hidden" id="finalResult">
+        <div class="final-best-record">
+          <div class="final-best-label">🎉 3회 측정 완료! 최고 기록</div>
+          <div class="final-best-time" id="finalBestTime">245ms</div>
+        </div>
+
+        <h3 style="color: white; margin-bottom: 20px;">이번 세션 기록</h3>
+        <div class="session-records" id="sessionRecords"></div>
+
+        <button class="action-button" onclick="restartGame()">같은 난이도로 다시</button>
+        <button class="action-button secondary" onclick="backToStart()">난이도 변경</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 게임 상태
+    let gameState = 'idle'; // idle, waiting, ready, result
+    let currentDifficulty = null;
+    let startTime = 0;
+    let timeout = null;
+    let currentAttempt = 0;
+    let maxAttempts = 3;
+    let sessionTimes = [];
+    
+    // 통계 데이터
+    let stats = {
+      easy: { bestTime: null, avgTime: null, attempts: 0, successful: 0, recentTimes: [] },
+      normal: { bestTime: null, avgTime: null, attempts: 0, successful: 0, recentTimes: [] },
+      hard: { bestTime: null, avgTime: null, attempts: 0, successful: 0, recentTimes: [] }
+    };
+
+    // DOM 요소
+    const startScreen = document.getElementById('startScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const resultScreen = document.getElementById('resultScreen');
+    const gameMessage = document.getElementById('gameMessage');
+    const gameInstruction = document.getElementById('gameInstruction');
+    const gameProgress = document.getElementById('gameProgress');
+
+    // 난이도별 대기 시간 설정
+    const difficultySettings = {
+      easy: { min: 2000, max: 4000 },
+      normal: { min: 1000, max: 3000 },
+      hard: { min: 500, max: 2000 }
+    };
+
+    // 로컬스토리지에서 통계 불러오기
+    function loadStats() {
+      const saved = localStorage.getItem('reactionGameStats');
+      if (saved) {
+        try {
+          stats = JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to load stats:', e);
+        }
+      }
+      updateStatsDisplay();
+    }
+
+    // 통계 저장
+    function saveStats() {
+      try {
+        localStorage.setItem('reactionGameStats', JSON.stringify(stats));
+      } catch (e) {
+        console.error('Failed to save stats:', e);
+      }
+    }
+
+    // 통계 표시 업데이트
+    function updateStatsDisplay() {
+      // 전체 통계 계산
+      let allBestTimes = [];
+      let allAvgTimes = [];
+      let totalAttempts = 0;
+      let totalSuccessful = 0;
+      let allRecentTimes = [];
+
+      Object.values(stats).forEach(diff => {
+        if (diff.bestTime) allBestTimes.push(diff.bestTime);
+        if (diff.avgTime) allAvgTimes.push(diff.avgTime);
+        totalAttempts += diff.attempts;
+        totalSuccessful += diff.successful;
+        allRecentTimes = allRecentTimes.concat(diff.recentTimes);
+      });
+
+      // 최고 기록
+      if (allBestTimes.length > 0) {
+        document.getElementById('bestTime').textContent = Math.min(...allBestTimes) + 'ms';
+      } else {
+        document.getElementById('bestTime').textContent = '-';
+      }
+
+      // 평균 반응속도
+      if (allAvgTimes.length > 0) {
+        const overallAvg = Math.round(allAvgTimes.reduce((a, b) => a + b, 0) / allAvgTimes.length);
+        document.getElementById('avgTime').textContent = overallAvg + 'ms';
+      } else {
+        document.getElementById('avgTime').textContent = '-';
+      }
+
+      // 시도 횟수
+      document.getElementById('attempts').textContent = totalAttempts;
+
+      // 성공률
+      if (totalAttempts > 0) {
+        const rate = Math.round((totalSuccessful / totalAttempts) * 100);
+        document.getElementById('successRate').textContent = rate + '%';
+      } else {
+        document.getElementById('successRate').textContent = '0%';
+      }
+
+      // 최근 기록 업데이트
+      updateHistoryDisplay(allRecentTimes);
+    }
+
+    // 최근 기록 표시
+    function updateHistoryDisplay(times) {
+      const historyList = document.getElementById('historyList');
+      
+      if (times.length === 0) {
+        historyList.innerHTML = '<div class="empty-history">아직 기록이 없습니다</div>';
+        return;
+      }
+
+      const bestTime = Math.min(...times);
+      const last10 = times.slice(-10).reverse();
+      
+      historyList.innerHTML = last10.map(time => {
+        const isBest = time === bestTime;
+        return `<div class="history-item ${isBest ? 'best' : ''}">${time}ms${isBest ? ' 🏆' : ''}</div>`;
+      }).join('');
+    }
+
+    // 게임 시작
+    function startGame(difficulty) {
+      currentDifficulty = difficulty;
+      currentAttempt = 0;
+      sessionTimes = [];
+      
+      startScreen.classList.add('hidden');
+      resultScreen.classList.remove('active');
+      
+      startAttempt();
+    }
+
+    // 시도 시작
+    function startAttempt() {
+      currentAttempt++;
+      gameState = 'waiting';
+      
+      gameScreen.classList.add('active', 'waiting');
+      gameScreen.classList.remove('ready', 'too-early');
+      
+      gameMessage.textContent = '준비...';
+      gameInstruction.textContent = '녹색으로 바뀔 때까지 기다리세요';
+      gameProgress.textContent = `시도 ${currentAttempt}/${maxAttempts}`;
+
+      // 랜덤 대기 시간
+      const settings = difficultySettings[currentDifficulty];
+      const delay = Math.random() * (settings.max - settings.min) + settings.min;
+
+      timeout = setTimeout(() => {
+        if (gameState === 'waiting') {
+          gameState = 'ready';
+          gameScreen.classList.remove('waiting');
+          gameScreen.classList.add('ready');
+          gameMessage.textContent = '클릭!';
+          gameInstruction.textContent = '지금 클릭하세요!';
+          startTime = Date.now();
+
+          // 10초 타임아웃
+          timeout = setTimeout(() => {
+            if (gameState === 'ready') {
+              handleTimeout();
+            }
+          }, 10000);
+        }
+      }, delay);
+    }
+
+    // 게임 화면 클릭 처리
+    function handleGameClick() {
+      if (gameState === 'waiting') {
+        // 조기 클릭
+        clearTimeout(timeout);
+        gameState = 'too-early';
+        gameScreen.classList.remove('waiting');
+        gameScreen.classList.add('too-early');
+        gameMessage.textContent = '너무 빨라요! 😅';
+        gameInstruction.textContent = '녹색으로 바뀔 때까지 기다려야 합니다';
+        
+        stats[currentDifficulty].attempts++;
+        saveStats();
+        updateStatsDisplay();
+
+        setTimeout(() => {
+          currentAttempt--;
+          showRetryButton();
+        }, 1500);
+
+      } else if (gameState === 'ready') {
+        // 정확한 클릭
+        clearTimeout(timeout);
+        const reactionTime = Date.now() - startTime;
+        gameState = 'result';
+        
+        sessionTimes.push(reactionTime);
+        stats[currentDifficulty].attempts++;
+        stats[currentDifficulty].successful++;
+        stats[currentDifficulty].recentTimes.push(reactionTime);
+        
+        // 최근 기록은 최대 10개만 유지
+        if (stats[currentDifficulty].recentTimes.length > 10) {
+          stats[currentDifficulty].recentTimes.shift();
+        }
+
+        // 최고 기록 업데이트
+        if (!stats[currentDifficulty].bestTime || reactionTime < stats[currentDifficulty].bestTime) {
+          stats[currentDifficulty].bestTime = reactionTime;
+        }
+
+        // 평균 계산
+        const times = stats[currentDifficulty].recentTimes;
+        stats[currentDifficulty].avgTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+
+        saveStats();
+        updateStatsDisplay();
+
+        gameScreen.classList.remove('active');
+        showResult(reactionTime);
+      }
+    }
+
+    // 타임아웃 처리
+    function handleTimeout() {
+      gameState = 'timeout';
+      gameScreen.classList.remove('ready');
+      gameScreen.classList.add('too-early');
+      gameMessage.textContent = '시간 초과! ⏱️';
+      gameInstruction.textContent = '10초 안에 클릭해야 합니다';
+      
+      setTimeout(() => {
+        currentAttempt--;
+        showRetryButton();
+      }, 1500);
+    }
+
+    // 재시도 버튼 표시
+    function showRetryButton() {
+      gameScreen.classList.remove('active');
+      resultScreen.classList.add('active');
+      
+      document.getElementById('resultTime').textContent = '';
+      document.getElementById('resultFeedback').textContent = '다시 시도하세요!';
+      document.getElementById('resultProgress').textContent = '';
+      document.getElementById('sessionBest').textContent = sessionTimes.length > 0 ? Math.min(...sessionTimes) + 'ms' : '-';
+      document.getElementById('allTimeBest').textContent = stats[currentDifficulty].bestTime ? stats[currentDifficulty].bestTime + 'ms' : '-';
+      document.getElementById('actionButtons').innerHTML = '<button class="action-button" onclick="startAttempt()">다시 시도</button>';
+      document.getElementById('finalResult').classList.add('hidden');
+    }
+
+    // 결과 표시
+    function showResult(time) {
+      resultScreen.classList.add('active');
+      
+      document.getElementById('resultTime').textContent = time + 'ms';
+      
+      // 피드백 메시지
+      let feedback = '';
+      if (time < 200) feedback = '놀라운 반응속도! 🚀';
+      else if (time < 300) feedback = '매우 빠릅니다! ⚡';
+      else if (time < 400) feedback = '좋은 반응속도! 👍';
+      else if (time < 500) feedback = '괜찮습니다! 😊';
+      else feedback = '조금 더 빠르게! 💪';
+      
+      document.getElementById('resultFeedback').textContent = feedback;
+      document.getElementById('resultProgress').textContent = `시도 ${currentAttempt}/${maxAttempts} 완료`;
+      document.getElementById('sessionBest').textContent = Math.min(...sessionTimes) + 'ms';
+      document.getElementById('allTimeBest').textContent = stats[currentDifficulty].bestTime + 'ms';
+
+      if (currentAttempt < maxAttempts) {
+        document.getElementById('actionButtons').innerHTML = '<button class="action-button" onclick="nextAttempt()">다음 시도</button>';
+        document.getElementById('finalResult').classList.add('hidden');
+      } else {
+        showFinalResult();
+      }
+    }
+
+    // 다음 시도
+    function nextAttempt() {
+      resultScreen.classList.remove('active');
+      startAttempt();
+    }
+
+    // 최종 결과 표시
+    function showFinalResult() {
+      document.getElementById('actionButtons').innerHTML = '';
+      document.getElementById('finalResult').classList.remove('hidden');
+      
+      const bestTime = Math.min(...sessionTimes);
+      document.getElementById('finalBestTime').textContent = bestTime + 'ms';
+      
+      // 세션 기록 표시
+      const sessionRecords = document.getElementById('sessionRecords');
+      let recordsHTML = '';
+      
+      sessionTimes.forEach((time, index) => {
+        const isBest = time === bestTime;
+        recordsHTML += `
+          <div class="session-record-card ${isBest ? 'best' : ''}">
+            <div class="session-record-label">${index + 1}회차${isBest ? ' 🏆' : ''}</div>
+            <div class="session-record-time">${time}ms</div>
+          </div>
+        `;
+      });
+      
+      // 평균 추가
+      const avgTime = Math.round(sessionTimes.reduce((a, b) => a + b, 0) / sessionTimes.length);
+      recordsHTML += `
+        <div class="session-record-card">
+          <div class="session-record-label">평균</div>
+          <div class="session-record-time">${avgTime}ms</div>
+        </div>
+      `;
+      
+      sessionRecords.innerHTML = recordsHTML;
+    }
+
+    // 같은 난이도로 다시
+    function restartGame() {
+      startGame(currentDifficulty);
+    }
+
+    // 시작 화면으로
+    function backToStart() {
+      resultScreen.classList.remove('active');
+      startScreen.classList.remove('hidden');
+      gameScreen.classList.remove('active');
+      currentDifficulty = null;
+      currentAttempt = 0;
+      sessionTimes = [];
+    }
+
+    // 통계 초기화
+    function resetStats() {
+      if (confirm('모든 기록을 초기화하시겠습니까?')) {
+        stats = {
+          easy: { bestTime: null, avgTime: null, attempts: 0, successful: 0, recentTimes: [] },
+          normal: { bestTime: null, avgTime: null, attempts: 0, successful: 0, recentTimes: [] },
+          hard: { bestTime: null, avgTime: null, attempts: 0, successful: 0, recentTimes: [] }
+        };
+        saveStats();
+        updateStatsDisplay();
+      }
+    }
+
+    // 키보드 지원
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (gameState === 'waiting' || gameState === 'ready') {
+          handleGameClick();
+        }
+      }
+    });
+
+    // 초기화
+    loadStats();
+  </script>
+</body>
+</html>
+
